@@ -1,16 +1,68 @@
-# React + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 📁 Frontend Architecture: `api / services / hooks`
 
-Currently, two official plugins are available:
+This project follows a **layered frontend architecture** to ensure scalability, maintainability, and clean separation of concerns.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 🔹 `api/`
 
-## React Compiler
+Handles **pure HTTP communication** with the backend (Axios / Fetch).
+Contains only request definitions with no business logic, UI logic, or React-specific code.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+**Responsibility:**
 
-## Expanding the ESLint configuration
+* Call backend endpoints
+* Return raw responses
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+### 🔹 `services/`
+
+Contains **business logic and side effects**.
+This layer orchestrates API calls, handles error normalization, token management, and user feedback (e.g., toasts).
+
+**Responsibility:**
+
+* Combine multiple API calls if needed
+* Handle side effects (auth tokens, notifications)
+* Transform or normalize response data
+
+---
+
+### 🔹 `hooks/`
+
+Encapsulates **React-specific data fetching logic** using TanStack Query.
+Manages caching, loading/error states, retries, and query invalidation.
+
+**Responsibility:**
+
+* Integrate services with React
+* Manage server state lifecycle
+* Expose clean APIs to UI components
+
+---
+
+### 🔹 UI Components
+
+Focused solely on **rendering and user interaction**.
+They consume hooks and remain free from API calls and business logic.
+
+---
+
+### ✅ Benefits of This Structure
+
+* Clear separation of concerns
+* Improved readability and testability
+* Easier refactoring and scaling
+* Matches real-world, production-grade React applications
+
+---
+
+### 🔁 Data Flow
+
+```
+UI → Hooks → Services → API → Backend
+```
+
+
+
+
