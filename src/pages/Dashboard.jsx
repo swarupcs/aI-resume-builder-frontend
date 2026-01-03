@@ -170,7 +170,7 @@ const Dashboard = () => {
   };
 
   const handlePreview = (resume) => {
-    navigate(`/preview/${resume.id}`);
+    navigate(`/preview/${resume._id}`);
   };
 
   const handleToggleVisibility = async (resume) => {
@@ -202,7 +202,7 @@ const Dashboard = () => {
   };
 
   const handleCardClick = (resume) => {
-    navigate(`/app/builder/${resume.id}`);
+    navigate(`/app/builder/${resume._id}`);
   };
 
   return (
@@ -317,7 +317,7 @@ const Dashboard = () => {
           }>
             {filteredResumes.map((resume) => (
               <ResumeCard
-                key={resume.id}
+                key={resume._id}
                 resume={resume}
                 onEdit={openEditModal}
                 onDelete={openDeleteDialog}

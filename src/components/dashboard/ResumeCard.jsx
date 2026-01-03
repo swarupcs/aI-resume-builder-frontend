@@ -40,6 +40,8 @@ export const ResumeCard = ({
   onPreview,
   onToggleVisibility,
 }) => {
+
+  console.log({resume})
   const colorIndex = parseInt(resume.id) % cardColors.length;
 
   return (
