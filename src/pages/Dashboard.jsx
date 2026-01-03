@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Upload, Loader2, FileText, Search, Filter, Grid3X3, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,14 +29,15 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useUserResume } from "../hooks/user/useUserResume.js";
+import { useQueryClient } from "@tanstack/react-query";
 
 const Dashboard = () => {
   const navigate = useNavigate();
 
 
   // State
-  const [resumes, setResumes] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // const [resumes, setResumes] = useState([]);
+  // const [loading, setLoading] = useState(true);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("updated");
@@ -51,70 +52,60 @@ const Dashboard = () => {
   // Selected resume for edit/delete
   const [selectedResume, setSelectedResume] = useState(null);
 
-  const { data: userResumes, isLoading, error } = useUserResume();
+  const queryClient = useQueryClient();
+
+  const { data: resumes = [], isLoading, error } = useUserResume();
 
 
 
 
-  console.log({ userResumes, isLoading, error });
+  console.log({ resumes, isLoading, error });
 
 
-  // Fetch resumes on mount
-  useEffect(() => {
-    const loadResumes = async () => {
-      try {
-        const data = await fetchResumes();
-        setResumes(data);
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to load resumes",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadResumes();
-  }, [toast]);
 
   // Filter and sort resumes
-  const filteredResumes = resumes
-    .filter((resume) =>
-      resume.title.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "title":
-          return a.title.localeCompare(b.title);
-        case "created":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        case "updated":
-        default:
-          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-      }
-    });
+  const filteredResumes = useMemo(() => {
+    return resumes
+      .filter((resume) =>
+        resume.title.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      .sort((a, b) => {
+        switch (sortBy) {
+          case 'title':
+            return a.title.localeCompare(b.title);
+          case 'created':
+            return new Date(b.createdAt) - new Date(a.createdAt);
+          case 'updated':
+          default:
+            return new Date(b.updatedAt) - new Date(a.updatedAt);
+        }
+      });
+  }, [resumes, searchQuery, sortBy]);
+  
+
+
+  console.log('filteredResumes', filteredResumes);
 
   // Handlers
   const handleCreateResume = async (title) => {
     const newResume = await createResume(title);
-    setResumes((prev) => [newResume, ...prev]);
-    toast({ title: "Success", description: "Resume created successfully" });
+    toast({ title: 'Success', description: 'Resume created successfully' });
+    queryClient.invalidateQueries(['userResume']);
     navigate(`/app/builder/${newResume.id}`);
   };
 
   const handleUploadResume = async (title, pdfText) => {
     const newResume = await uploadResume(title, pdfText);
-    setResumes((prev) => [newResume, ...prev]);
+    // setResumes((prev) => [newResume, ...prev]);
     toast({ title: "Success", description: "Resume uploaded successfully" });
     navigate(`/app/builder/${newResume.id}`);
   };
 
   const handleEditResume = async (id, title) => {
     const updated = await updateResumeTitle(id, title);
-    setResumes((prev) =>
-      prev.map((r) => (r.id === id ? updated : r))
-    );
+    // setResumes((prev) =>
+    //   prev.map((r) => (r.id === id ? updated : r))
+    // );
     toast({ title: "Success", description: "Resume updated successfully" });
   };
 
@@ -124,25 +115,26 @@ const Dashboard = () => {
     setDeleteLoading(true);
     try {
       await deleteResume(selectedResume.id);
-      setResumes((prev) => prev.filter((r) => r.id !== selectedResume.id));
-      toast({ title: "Success", description: "Resume deleted successfully" });
+      toast({ title: 'Success', description: 'Resume deleted successfully' });
+      queryClient.invalidateQueries(['userResume']);
       setDeleteDialogOpen(false);
       setSelectedResume(null);
-    } catch (error) {
+    } catch {
       toast({
-        title: "Error",
-        description: "Failed to delete resume",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to delete resume',
+        variant: 'destructive',
       });
     } finally {
       setDeleteLoading(false);
     }
   };
+  
 
   const handleDuplicate = async (resume) => {
     try {
       const duplicated = await duplicateResume(resume.id);
-      setResumes((prev) => [duplicated, ...prev]);
+      // setResumes((prev) => [duplicated, ...prev]);
       toast({ title: "Success", description: "Resume duplicated successfully" });
     } catch (error) {
       toast({
@@ -183,22 +175,21 @@ const Dashboard = () => {
 
   const handleToggleVisibility = async (resume) => {
     try {
-      const updated = await toggleResumeVisibility(resume.id);
-      setResumes((prev) =>
-        prev.map((r) => (r.id === resume.id ? updated : r))
-      );
-      toast({ 
-        title: "Visibility updated", 
-        description: `Resume is now ${updated.isPublic ? "public" : "private"}` 
-      });
-    } catch (error) {
+      await toggleResumeVisibility(resume.id);
       toast({
-        title: "Error",
-        description: "Failed to update visibility",
-        variant: "destructive",
+        title: 'Visibility updated',
+        description: `Resume visibility updated`,
+      });
+      queryClient.invalidateQueries(['userResume']);
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to update visibility',
+        variant: 'destructive',
       });
     }
   };
+  
 
   const openEditModal = (resume) => {
     setSelectedResume(resume);
@@ -285,7 +276,7 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        {loading ? (
+        {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
