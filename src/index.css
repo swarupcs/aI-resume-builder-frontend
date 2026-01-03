@@ -1,11 +1,11 @@
-/* ---------------------------------------------
-   Tailwind v4 Core
---------------------------------------------- */
+/* Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
 
 /* Dark mode variant */
 @custom-variant dark (&:is(.dark *));
