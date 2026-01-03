@@ -1,6 +1,9 @@
 {
   "compilerOptions": {
     "moduleResolution": "node16",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "target": "ESNext",

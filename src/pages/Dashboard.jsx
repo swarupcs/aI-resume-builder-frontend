@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useUserResume } from "../hooks/user/useUserResume.js";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -49,6 +50,14 @@ const Dashboard = () => {
 
   // Selected resume for edit/delete
   const [selectedResume, setSelectedResume] = useState(null);
+
+  const { data: userResumes, isLoading, error } = useUserResume();
+
+
+
+
+  console.log({ userResumes, isLoading, error });
+
 
   // Fetch resumes on mount
   useEffect(() => {
