@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { LogOut, Sparkles, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-// import { useAuth } from '@/hooks/useAuth';
+import { useDispatch, useSelector } from 'react-redux';
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,13 +11,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { logout, selectCurrentUser } from '@/features/authSlice.js';
 
 const Navbar = () => {
-  const { user, logout } = {};
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const user = useSelector(selectCurrentUser);
 
   const handleLogout = () => {
-    logout();
+    dispatch(logout());
     navigate('/');
   };
 
@@ -24,7 +27,7 @@ const Navbar = () => {
     if (user?.firstName && user?.lastName) {
       return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
     }
-    return user?.email?.[0]?.toUpperCase() || 'U';
+    return user?.emailId?.[0]?.toUpperCase() || 'U';
   };
 
   return (
@@ -88,7 +91,7 @@ const Navbar = () => {
                       {user.firstName} {user.lastName}
                     </span>
                     <span className='text-xs text-muted-foreground'>
-                      {user.email}
+                      {user.emailId}
                     </span>
                   </div>
                 </div>
