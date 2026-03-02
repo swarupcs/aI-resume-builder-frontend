@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import html2pdf from 'html2pdf.js';
@@ -40,7 +40,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { useResumeById } from '@/hooks/resume/useResumeById';
+
+import { usePublicResumeById } from '@/hooks/resume/usePublicResumeById.js';
 
 const templates = [
   { id: 'classic', name: 'Classic' },
@@ -77,21 +78,19 @@ const Preview = () => {
   const previewRef = useRef(null);
 
   // ── Real API call ──
-  const {
-    data: response,
-    isLoading,
-    isError,
-  } = useResumeById(resumeId, {
-    onSuccess: (data) => {
-      const resume = data?.data?.resume;
-      if (resume) {
-        setPreviewTemplate(resume.template || 'classic');
-        setPreviewColor(resume.accent_color || '#3B82F6');
-      }
-    },
-  });
+const { data: response, isLoading, isError } = usePublicResumeById(resumeId);
+
 
   const resumeData = response?.data?.resume || null;
+
+useEffect(() => {
+  if (resumeData) {
+    setPreviewTemplate(resumeData.template || 'classic');
+    setPreviewColor(resumeData.accent_color || '#3B82F6');
+  }
+}, [resumeData]);
+
+
 
   const handleZoomIn = () => setZoom((p) => Math.min(p + 10, 150));
   const handleZoomOut = () => setZoom((p) => Math.max(p - 10, 50));
