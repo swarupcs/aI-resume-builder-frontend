@@ -18,3 +18,7 @@ export const updateResumeTitleApi = (id, title) =>
   axiosInstance.patch(`/resume/${id}/title`, { title });
 export const toggleResumeVisibilityApi = (id) =>
   axiosInstance.patch(`/resume/${id}/visibility`);
+export const exportResumePdfApi = (resumeId) =>
+  axiosInstance.get(`/resume/${resumeId}/export-pdf`, {
+    responseType: 'blob',
+  });

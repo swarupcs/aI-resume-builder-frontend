@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import html2pdf from 'html2pdf.js';
 import {
   ArrowLeft,
   Loader2,
@@ -40,8 +39,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-
 import { usePublicResumeById } from '@/hooks/resume/usePublicResumeById.js';
+import { useExportResumePdf } from '@/hooks/resume/useExportResumePdf.js';
 
 const templates = [
   { id: 'classic', name: 'Classic' },
@@ -71,63 +70,34 @@ const Preview = () => {
   const [zoom, setZoom] = useState(100);
   const [copied, setCopied] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState('');
   const [previewColor, setPreviewColor] = useState('');
   const [viewCount] = useState(() => Math.floor(Math.random() * 500) + 50);
+
   const previewRef = useRef(null);
 
-  // ── Real API call ──
-const { data: response, isLoading, isError } = usePublicResumeById(resumeId);
+  const { data: response, isLoading, isError } = usePublicResumeById(resumeId);
+  const resumeData = response?.data?.resume ?? null;
 
+  const { mutate: exportPdf, isPending: isDownloading } = useExportResumePdf();
 
-  const resumeData = response?.data?.resume || null;
-
-useEffect(() => {
-  if (resumeData) {
-    setPreviewTemplate(resumeData.template || 'classic');
-    setPreviewColor(resumeData.accent_color || '#3B82F6');
-  }
-}, [resumeData]);
-
-
+  useEffect(() => {
+    if (resumeData) {
+      setPreviewTemplate(resumeData.template || 'classic');
+      setPreviewColor(resumeData.accent_color || '#3B82F6');
+    }
+  }, [resumeData]);
 
   const handleZoomIn = () => setZoom((p) => Math.min(p + 10, 150));
   const handleZoomOut = () => setZoom((p) => Math.max(p - 10, 50));
   const handleResetZoom = () => setZoom(100);
   const handlePrint = () => window.print();
 
-  const handleDownload = async () => {
-    const element = document.getElementById('resume-preview');
-    if (!element) return toast.error('Could not find resume to download');
-
-    setIsDownloading(true);
-    toast.loading('Generating PDF...', { id: 'pdf-download' });
-
-    try {
-      await html2pdf()
-        .set({
-          margin: 0,
-          filename: `${resumeData?.personal_info?.full_name || 'Resume'}_Resume.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            letterRendering: true,
-            logging: false,
-          },
-          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-        })
-        .from(element)
-        .save();
-      toast.success('PDF downloaded successfully!', { id: 'pdf-download' });
-    } catch {
-      toast.error('Failed to generate PDF. Try using Print instead.', {
-        id: 'pdf-download',
-      });
-    } finally {
-      setIsDownloading(false);
-    }
+  const handleDownload = () => {
+    exportPdf({
+      resumeId,
+      fullName: resumeData?.personal_info?.full_name,
+    });
   };
 
   const shareUrl = `${window.location.origin}/preview/${resumeId}`;
@@ -161,12 +131,11 @@ useEffect(() => {
     window.open(`mailto:?subject=${subject}&body=${body}`);
   };
 
-  const handleLinkedInShare = () => {
+  const handleLinkedInShare = () =>
     window.open(
       `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
       '_blank',
     );
-  };
 
   const handleTwitterShare = () => {
     const text = encodeURIComponent(
@@ -185,7 +154,6 @@ useEffect(() => {
       : previewRef.current.requestFullscreen();
   };
 
-  // ── Loading state ──
   if (isLoading) {
     return (
       <div className='min-h-screen bg-muted/30 flex items-center justify-center'>
@@ -197,7 +165,6 @@ useEffect(() => {
     );
   }
 
-  // ── Error / not found state ──
   if (isError || !resumeData) {
     return (
       <div className='min-h-screen bg-background flex flex-col items-center justify-center px-4'>
@@ -213,9 +180,9 @@ useEffect(() => {
             and try again.
           </p>
           <Button asChild>
-            <Link to='/dashboard'>
+            <Link to='/'>
               <ArrowLeft className='mr-2 h-4 w-4' />
-              Go to Dashboard
+              Go to Home
             </Link>
           </Button>
         </div>
@@ -225,17 +192,20 @@ useEffect(() => {
 
   return (
     <div className='min-h-screen bg-muted/30'>
-      {/* Header */}
-      <div className='bg-background border-b border-border sticky top-0 z-20'>
+      {/* ── Header — hidden on PDF export ── */}
+      <div
+        data-hide-on-export
+        className='bg-background border-b border-border sticky top-0 z-20'
+      >
         <div className='max-w-7xl mx-auto px-4 py-3'>
           <div className='flex items-center justify-between gap-4'>
             <div className='flex items-center gap-4 min-w-0'>
               <Link
-                to='/dashboard'
+                to='/'
                 className='inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors shrink-0'
               >
                 <ArrowLeft className='size-4' />
-                <span className='hidden sm:inline'>Dashboard</span>
+                <span className='hidden sm:inline'>Home</span>
               </Link>
               <div className='min-w-0'>
                 <h1 className='font-semibold text-foreground truncate'>
@@ -337,26 +307,21 @@ useEffect(() => {
                     {copied ? 'Copied!' : 'Copy Link'}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleShare}>
-                    <ExternalLink className='size-4 mr-2' />
-                    Share via...
+                    <ExternalLink className='size-4 mr-2' /> Share via...
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleEmailShare}>
-                    <Mail className='size-4 mr-2' />
-                    Share via Email
+                    <Mail className='size-4 mr-2' /> Share via Email
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleLinkedInShare}>
-                    <Linkedin className='size-4 mr-2' />
-                    Share on LinkedIn
+                    <Linkedin className='size-4 mr-2' /> Share on LinkedIn
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleTwitterShare}>
-                    <Twitter className='size-4 mr-2' />
-                    Share on Twitter
+                    <Twitter className='size-4 mr-2' /> Share on Twitter
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setShowQRModal(true)}>
-                    <QrCode className='size-4 mr-2' />
-                    Show QR Code
+                    <QrCode className='size-4 mr-2' /> Show QR Code
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -389,8 +354,11 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* Zoom Controls */}
-      <div className='fixed bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-background/95 backdrop-blur-sm border border-border rounded-full px-4 py-2 shadow-lg'>
+      {/* ── Zoom Controls — hidden on PDF export ── */}
+      <div
+        data-hide-on-export
+        className='fixed bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-background/95 backdrop-blur-sm border border-border rounded-full px-4 py-2 shadow-lg'
+      >
         <Button
           variant='ghost'
           size='icon'
@@ -426,10 +394,11 @@ useEffect(() => {
         </Button>
       </div>
 
-      {/* Resume Preview */}
+      {/* ── Resume Preview ── */}
       <div className='py-10 px-4 flex justify-center'>
         <div
           ref={previewRef}
+          data-resume-ready
           className='transition-transform duration-200 origin-top'
           style={{
             transform: `scale(${zoom / 100})`,
@@ -445,15 +414,15 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* CTA */}
-      <div className='fixed bottom-6 right-6 z-10'>
+      {/* ── CTA — hidden on PDF export ── */}
+      <div data-hide-on-export className='fixed bottom-6 right-6 z-10'>
         <Button onClick={() => navigate('/signup')} className='shadow-lg gap-2'>
           Create Your Resume
           <ArrowLeft className='size-4 rotate-180' />
         </Button>
       </div>
 
-      {/* QR Modal */}
+      {/* ── QR Modal ── */}
       <Dialog open={showQRModal} onOpenChange={setShowQRModal}>
         <DialogContent className='sm:max-w-md'>
           <DialogHeader>

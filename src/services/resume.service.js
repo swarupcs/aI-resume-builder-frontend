@@ -6,6 +6,7 @@ import {
   deleteResumeApi,
   updateResumeTitleApi,
   toggleResumeVisibilityApi,
+  exportResumePdfApi,
 } from '@/api/resume.js';
 import handleApiError from '@/lib/handleApiError.js';
 
@@ -76,6 +77,19 @@ export const resumeService = {
       return data;
     } catch (error) {
       throw handleApiError(error, 'Failed to toggle visibility');
+    }
+  },
+  exportResumePdf: async (resumeId, fullName) => {
+    try {
+      const { data } = await exportResumePdfApi(resumeId);
+      const url = URL.createObjectURL(data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${fullName ?? 'Resume'}_Resume.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      throw handleApiError(error, 'Failed to export PDF');
     }
   },
 };
