@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -10,29 +9,26 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { useCreateResume } from '@/hooks/resume/useCreateResume.js';
+import { useNavigate } from 'react-router-dom';
 
-
-
-export const CreateResumeModal = ({
-  open,
-  onClose,
-  onSubmit,
-}) => {
+export const CreateResumeModal = ({ open, onClose }) => {
   const [title, setTitle] = useState('');
-  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { mutate: createResume, isPending } = useCreateResume();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim()) return;
 
-    setLoading(true);
-    try {
-      await onSubmit(title.trim());
-      setTitle('');
-      onClose();
-    } finally {
-      setLoading(false);
-    }
+    createResume(title.trim(), {
+      onSuccess: (data) => {
+        setTitle('');
+        onClose();
+        navigate(`/app/builder/${data.data.resume._id}`);
+      },
+    });
   };
 
   return (
@@ -50,7 +46,7 @@ export const CreateResumeModal = ({
                 placeholder='e.g., Software Engineer Resume'
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                disabled={loading}
+                disabled={isPending}
               />
             </div>
           </div>
@@ -59,12 +55,12 @@ export const CreateResumeModal = ({
               type='button'
               variant='outline'
               onClick={onClose}
-              disabled={loading}
+              disabled={isPending}
             >
               Cancel
             </Button>
-            <Button type='submit' disabled={!title.trim() || loading}>
-              {loading && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+            <Button type='submit' disabled={!title.trim() || isPending}>
+              {isPending && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
               Create
             </Button>
           </DialogFooter>

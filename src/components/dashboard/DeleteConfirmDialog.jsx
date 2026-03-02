@@ -9,17 +9,17 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Loader2 } from 'lucide-react';
+import { useDeleteResume } from '@/hooks/resume/useDeleteResume.js';
 
+export const DeleteConfirmDialog = ({ open, resume, onClose }) => {
+  const { mutate: deleteResume, isPending } = useDeleteResume();
 
+  const handleConfirm = () => {
+    deleteResume(resume._id, {
+      onSuccess: () => onClose(),
+    });
+  };
 
-
-export const DeleteConfirmDialog = ({
-  open,
-  resume,
-  loading,
-  onClose,
-  onConfirm,
-}) => {
   return (
     <AlertDialog open={open} onOpenChange={onClose}>
       <AlertDialogContent>
@@ -31,13 +31,13 @@ export const DeleteConfirmDialog = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            onClick={onConfirm}
-            disabled={loading}
+            onClick={handleConfirm}
+            disabled={isPending}
             className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
           >
-            {loading && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+            {isPending && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
             Delete
           </AlertDialogAction>
         </AlertDialogFooter>

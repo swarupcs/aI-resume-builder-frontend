@@ -10,67 +10,66 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, Upload, FileText, X } from 'lucide-react';
+import { useUploadResume } from '@/hooks/ai/useUploadResume.js';
+import { useNavigate } from 'react-router-dom';
+import * as pdfjsLib from 'pdfjs-dist';
 
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
-
-export const UploadResumeModal = ({
-  open,
-  onClose,
-  onSubmit,
-}) => {
+export const UploadResumeModal = ({ open, onClose }) => {
   const [title, setTitle] = useState('');
   const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const navigate = useNavigate();
+  const { mutate: uploadResume, isPending } = useUploadResume();
 
   const handleDrag = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
-    }
+    setDragActive(e.type === 'dragenter' || e.type === 'dragover');
   }, []);
 
   const handleDrop = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const droppedFile = e.dataTransfer.files[0];
-      if (droppedFile.type === 'application/pdf') {
-        setFile(droppedFile);
-      }
-    }
+    const dropped = e.dataTransfer.files?.[0];
+    if (dropped?.type === 'application/pdf') setFile(dropped);
   }, []);
 
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
-    }
+    const selected = e.target.files?.[0];
+    if (selected) setFile(selected);
   };
 
   const extractTextFromPdf = async (pdfFile) => {
-    // Mock PDF text extraction - in production, use pdf.js or similar
-    return `Extracted content from ${pdfFile.name}`;
+    const arrayBuffer = await pdfFile.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const pages = await Promise.all(
+      Array.from({ length: pdf.numPages }, (_, i) =>
+        pdf.getPage(i + 1).then((page) => page.getTextContent()),
+      ),
+    );
+    return pages
+      .flatMap((content) => content.items.map((item) => item.str))
+      .join(' ');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title.trim() || !file) return;
 
-    setLoading(true);
-    try {
-      const pdfText = await extractTextFromPdf(file);
-      await onSubmit(title.trim(), pdfText);
-      setTitle('');
-      setFile(null);
-      onClose();
-    } finally {
-      setLoading(false);
-    }
+    const resumeText = await extractTextFromPdf(file);
+
+    uploadResume(
+      { title: title.trim(), resumeText },
+      {
+        onSuccess: (data) => {
+          resetAndClose();
+          navigate(`/app/builder/${data.data.resumeId}`);
+        },
+      },
+    );
   };
 
   const resetAndClose = () => {
@@ -94,7 +93,7 @@ export const UploadResumeModal = ({
                 placeholder='e.g., My Professional Resume'
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                disabled={loading}
+                disabled={isPending}
               />
             </div>
 
@@ -142,7 +141,7 @@ export const UploadResumeModal = ({
                       accept='.pdf'
                       onChange={handleFileChange}
                       className='absolute inset-0 w-full h-full opacity-0 cursor-pointer'
-                      disabled={loading}
+                      disabled={isPending}
                     />
                   </>
                 )}
@@ -154,12 +153,15 @@ export const UploadResumeModal = ({
               type='button'
               variant='outline'
               onClick={resetAndClose}
-              disabled={loading}
+              disabled={isPending}
             >
               Cancel
             </Button>
-            <Button type='submit' disabled={!title.trim() || !file || loading}>
-              {loading && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+            <Button
+              type='submit'
+              disabled={!title.trim() || !file || isPending}
+            >
+              {isPending && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
               Upload
             </Button>
           </DialogFooter>

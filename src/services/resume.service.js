@@ -4,6 +4,8 @@ import {
   createResumeApi,
   updateResumeApi,
   deleteResumeApi,
+  updateResumeTitleApi,
+  toggleResumeVisibilityApi,
 } from '@/api/resume.js';
 import handleApiError from '@/lib/handleApiError.js';
 
@@ -56,6 +58,24 @@ export const resumeService = {
       return data;
     } catch (error) {
       throw handleApiError(error, 'Failed to delete resume');
+    }
+  },
+
+  updateResumeTitle: async (id, title) => {
+    try {
+      const { data } = await updateResumeTitleApi(id, title);
+      return data;
+    } catch (error) {
+      throw handleApiError(error, 'Failed to update title');
+    }
+  },
+
+  toggleResumeVisibility: async (id) => {
+    try {
+      const { data } = await toggleResumeVisibilityApi(id);
+      return data;
+    } catch (error) {
+      throw handleApiError(error, 'Failed to toggle visibility');
     }
   },
 };

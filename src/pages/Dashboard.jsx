@@ -1,8 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Plus,
-  Upload,
   Loader2,
   FileText,
   Search,
@@ -10,6 +8,8 @@ import {
   Grid3X3,
   List,
   Sparkles,
+  Plus,
+  Upload,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,11 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-
-// ✅ Real hooks
 import { useUserResume } from '@/hooks/user/useUserResume.js';
-import { useCreateResume } from '@/hooks/resume/useCreateResume.js';
-import { useDeleteResume } from '@/hooks/resume/useDeleteResume.js';
 import { useQueryClient } from '@tanstack/react-query';
 import { resumeService } from '@/services/resume.service.js';
 
@@ -48,14 +44,8 @@ const Dashboard = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedResume, setSelectedResume] = useState(null);
 
-  // ── Queries ──
   const { data: resumes = [], isLoading } = useUserResume();
 
-  // ── Mutations ──
-  const { mutate: createResume, isPending: isCreating } = useCreateResume();
-  const { mutate: deleteResume, isPending: isDeleting } = useDeleteResume();
-
-  // ── Filter & sort ──
   const filteredResumes = useMemo(() => {
     return resumes
       .filter((r) => r.title.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -66,47 +56,6 @@ const Dashboard = () => {
         return new Date(b.updatedAt) - new Date(a.updatedAt);
       });
   }, [resumes, searchQuery, sortBy]);
-
-  // ── Handlers ──
-  const handleCreateResume = (title) => {
-    createResume(title, {
-      onSuccess: (data) => navigate(`/app/builder/${data.data.resume._id}`),
-    });
-  };
-
-  const handleUploadResume = async (title, pdfText) => {
-    try {
-      const data = await resumeService.uploadResume({
-        title,
-        resumeText: pdfText,
-      });
-      toast.success('Resume uploaded successfully');
-      queryClient.invalidateQueries({ queryKey: ['userResume'] });
-      navigate(`/app/builder/${data.data.resume._id}`);
-    } catch {
-      toast.error('Failed to upload resume');
-    }
-  };
-
-  const handleEditResume = async (id, title) => {
-    try {
-      await resumeService.updateResumeTitle(id, title);
-      toast.success('Resume updated successfully');
-      queryClient.invalidateQueries({ queryKey: ['userResume'] });
-    } catch {
-      toast.error('Failed to update resume');
-    }
-  };
-
-  const handleDeleteResume = () => {
-    if (!selectedResume) return;
-    deleteResume(selectedResume._id, {
-      onSuccess: () => {
-        setDeleteDialogOpen(false);
-        setSelectedResume(null);
-      },
-    });
-  };
 
   const handleToggleVisibility = async (resume) => {
     try {
@@ -178,14 +127,9 @@ const Dashboard = () => {
                 <Button
                   size='sm'
                   onClick={() => setCreateModalOpen(true)}
-                  disabled={isCreating}
                   className='gap-2'
                 >
-                  {isCreating ? (
-                    <Loader2 className='h-4 w-4 animate-spin' />
-                  ) : (
-                    <Plus className='h-4 w-4' />
-                  )}
+                  <Plus className='h-4 w-4' />
                   New Resume
                 </Button>
               </div>
@@ -348,16 +292,14 @@ const Dashboard = () => {
         </main>
       </div>
 
-      {/* Modals */}
+      {/* ── Modals — all self-contained, no onSubmit needed ── */}
       <CreateResumeModal
         open={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
-        onSubmit={handleCreateResume}
       />
       <UploadResumeModal
         open={uploadModalOpen}
         onClose={() => setUploadModalOpen(false)}
-        onSubmit={handleUploadResume}
       />
       <EditResumeModal
         open={editModalOpen}
@@ -366,17 +308,14 @@ const Dashboard = () => {
           setEditModalOpen(false);
           setSelectedResume(null);
         }}
-        onSubmit={handleEditResume}
       />
       <DeleteConfirmDialog
         open={deleteDialogOpen}
         resume={selectedResume}
-        loading={isDeleting}
         onClose={() => {
           setDeleteDialogOpen(false);
           setSelectedResume(null);
         }}
-        onConfirm={handleDeleteResume}
       />
     </div>
   );
