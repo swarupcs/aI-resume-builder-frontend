@@ -32,8 +32,9 @@ import ColorPicker from '@/components/builder/ColorPicker';
 import { Button } from '@/components/ui/button';
 import { useResumeById } from '@/hooks/resume/useResumeById';
 import { useUpdateResume } from '@/hooks/resume/useUpdateResume';
-import { useToggleResumeVisibility } from '@/hooks/resume/useToggleResumeVisibility';
+
 import { useExportResumePdf } from '@/hooks/resume/useExportResumePdf';
+import { useToggleResumeVisibility } from '@/hooks/resume/UsetToggleresumevisibility.js';
 
 const sections = [
   { id: 'personal', name: 'Personal Info', icon: User },
