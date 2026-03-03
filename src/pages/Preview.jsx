@@ -63,6 +63,10 @@ const accentColors = [
   { name: 'Indigo', value: '#6366F1' },
 ];
 
+// Shared className for all dropdown menu items — overrides shadcn's accent hover
+// with a visible purple highlight + white text using [&:hover] to ensure specificity
+const menuItemCls =
+  'cursor-pointer gap-2 text-foreground [&:hover]:bg-orange-500/10 [&:hover]:text-orange-400 [&[data-highlighted]]:bg-orange-500/10 [&[data-highlighted]]:text-orange-400';
 const Preview = () => {
   const { resumeId } = useParams();
   const navigate = useNavigate();
@@ -70,7 +74,6 @@ const Preview = () => {
   const [zoom, setZoom] = useState(100);
   const [copied, setCopied] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
-
   const [viewCount] = useState(() => Math.floor(Math.random() * 500) + 50);
 
   const previewRef = useRef(null);
@@ -81,13 +84,9 @@ const Preview = () => {
   const { mutate: exportPdf, isPending: isDownloading } =
     useExportResumePdfPublic();
 
-  // Initialize template and color from server data on first load.
-  // After that the user can override them via the dropdowns.
-  // Using null as sentinel so we can detect "not yet initialized".
   const [previewTemplate, setPreviewTemplate] = useState(null);
   const [previewColor, setPreviewColor] = useState(null);
 
-  // Resolved values — falls back to resume data or defaults until state is set
   const activeTemplate = previewTemplate ?? resumeData?.template ?? 'classic';
   const activeColor = previewColor ?? resumeData?.accent_color ?? '#3B82F6';
 
@@ -97,10 +96,7 @@ const Preview = () => {
   const handlePrint = () => window.print();
 
   const handleDownload = () => {
-    exportPdf({
-      resumeId,
-      fullName: resumeData?.personal_info?.full_name,
-    });
+    exportPdf({ resumeId, fullName: resumeData?.personal_info?.full_name });
   };
 
   const shareUrl = `${window.location.origin}/preview/${resumeId}`;
@@ -121,8 +117,7 @@ const Preview = () => {
           url: shareUrl,
         });
       } catch (error) {
-        console.error('Share error:', error);
-        toast.error('Failed to share. Try again.');
+        handleCopyLink();
       }
     } else {
       handleCopyLink();
@@ -242,16 +237,20 @@ const Preview = () => {
                     <ChevronDown className='size-3' />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align='end'>
+                <DropdownMenuContent align='end' className='w-44'>
                   {templates.map((t) => (
                     <DropdownMenuItem
                       key={t.id}
                       onClick={() => setPreviewTemplate(t.id)}
-                      className={activeTemplate === t.id ? 'bg-primary/10' : ''}
+                      className={`${menuItemCls} ${
+                        activeTemplate === t.id
+                          ? 'bg-primary/20 text-primary font-medium'
+                          : ''
+                      }`}
                     >
                       {t.name}
                       {activeTemplate === t.id && (
-                        <Check className='size-4 ml-auto' />
+                        <Check className='size-4 ml-auto text-primary' />
                       )}
                     </DropdownMenuItem>
                   ))}
@@ -280,10 +279,10 @@ const Preview = () => {
                       <button
                         key={color.value}
                         onClick={() => setPreviewColor(color.value)}
-                        className={`size-8 rounded-full border-2 transition-transform hover:scale-110 ${
+                        className={`size-8 rounded-full border-2 transition-all hover:scale-110 ${
                           activeColor === color.value
-                            ? 'border-foreground scale-110'
-                            : 'border-transparent'
+                            ? 'border-white scale-110 ring-2 ring-primary/50'
+                            : 'border-transparent hover:border-white/60'
                         }`}
                         style={{ backgroundColor: color.value }}
                         title={color.name}
@@ -302,30 +301,48 @@ const Preview = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align='end' className='w-56'>
-                  <DropdownMenuItem onClick={handleCopyLink}>
+                  <DropdownMenuItem
+                    onClick={handleCopyLink}
+                    className={menuItemCls}
+                  >
                     {copied ? (
-                      <Check className='size-4 mr-2' />
+                      <Check className='size-4 text-green-500' />
                     ) : (
-                      <Copy className='size-4 mr-2' />
+                      <Copy className='size-4' />
                     )}
                     {copied ? 'Copied!' : 'Copy Link'}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleShare}>
-                    <ExternalLink className='size-4 mr-2' /> Share via...
+                  <DropdownMenuItem
+                    onClick={handleShare}
+                    className={menuItemCls}
+                  >
+                    <ExternalLink className='size-4' /> Share via...
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleEmailShare}>
-                    <Mail className='size-4 mr-2' /> Share via Email
+                  <DropdownMenuItem
+                    onClick={handleEmailShare}
+                    className={menuItemCls}
+                  >
+                    <Mail className='size-4' /> Share via Email
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleLinkedInShare}>
-                    <Linkedin className='size-4 mr-2' /> Share on LinkedIn
+                  <DropdownMenuItem
+                    onClick={handleLinkedInShare}
+                    className={menuItemCls}
+                  >
+                    <Linkedin className='size-4' /> Share on LinkedIn
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleTwitterShare}>
-                    <Twitter className='size-4 mr-2' /> Share on Twitter
+                  <DropdownMenuItem
+                    onClick={handleTwitterShare}
+                    className={menuItemCls}
+                  >
+                    <Twitter className='size-4' /> Share on Twitter
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setShowQRModal(true)}>
-                    <QrCode className='size-4 mr-2' /> Show QR Code
+                  <DropdownMenuItem
+                    onClick={() => setShowQRModal(true)}
+                    className={menuItemCls}
+                  >
+                    <QrCode className='size-4' /> Show QR Code
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -358,7 +375,7 @@ const Preview = () => {
         </div>
       </div>
 
-      {/* Zoom Controls hidden on PDF export */}
+      {/* Zoom Controls */}
       <div
         data-hide-on-export
         className='fixed bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-background/95 backdrop-blur-sm border border-border rounded-full px-4 py-2 shadow-lg'
@@ -418,7 +435,7 @@ const Preview = () => {
         </div>
       </div>
 
-      {/* CTA hidden on PDF export */}
+      {/* CTA */}
       <div data-hide-on-export className='fixed bottom-6 right-6 z-10'>
         <Button onClick={() => navigate('/signup')} className='shadow-lg gap-2'>
           Create Your Resume
