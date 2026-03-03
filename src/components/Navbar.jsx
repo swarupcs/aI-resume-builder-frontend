@@ -70,7 +70,7 @@ const Navbar = () => {
               <div className='absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity' />
             </div>
             <span className='font-display text-lg font-bold text-foreground tracking-tight'>
-              Resume<span className='text-gradient'>AI</span>
+              Resume<span className='text-gradient'>IQ</span>
             </span>
           </Link>
 

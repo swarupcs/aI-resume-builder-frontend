@@ -6,7 +6,7 @@ const testimonials = [
     role: 'Software Engineer',
     company: 'Google',
     content:
-      'ResumeAI helped me land my dream job. The AI-generated bullet points perfectly highlighted my achievements in a way I never could have written myself.',
+      'ResumeIQ helped me land my dream job. The AI-generated bullet points perfectly highlighted my achievements in a way I never could have written myself.',
     avatar: 'SC',
     color: 'from-blue-500 to-indigo-600',
     rating: 5,
@@ -26,7 +26,7 @@ const testimonials = [
     role: 'Marketing Director',
     company: 'Shopify',
     content:
-      "The templates are gorgeous and professional. I've recommended ResumeAI to everyone in my network looking to level up their career.",
+      "The templates are gorgeous and professional. I've recommended ResumeIQ to everyone in my network looking to level up their career.",
     avatar: 'ER',
     color: 'from-rose-500 to-pink-600',
     rating: 5,
@@ -64,7 +64,7 @@ const TestimonialsSection = () => {
           </h2>
           <p className='max-w-2xl mx-auto text-muted-foreground text-lg leading-relaxed'>
             Join thousands of job seekers who have successfully landed their
-            dream roles with ResumeAI.
+            dream roles with ResumeIQ.
           </p>
         </div>
 
