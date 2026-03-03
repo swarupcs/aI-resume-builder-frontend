@@ -72,6 +72,10 @@ const Dashboard = () => {
   };
 
   const handleShare = async (resume) => {
+    if (!resume.isPublic) {
+      toast.error('Make the resume public before sharing');
+      return;
+    }
     const shareUrl = `${window.location.origin}/preview/${resume._id}`;
     await navigator.clipboard.writeText(shareUrl);
     toast.success('Resume link copied to clipboard');

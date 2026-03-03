@@ -121,12 +121,14 @@ export const ResumeCard = ({
               >
                 <Download className='h-4 w-4' /> Download PDF
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onShare(resume)}
-                className='gap-2'
-              >
-                <Share2 className='h-4 w-4' /> Share Link
-              </DropdownMenuItem>
+              {resume.isPublic && (
+                <DropdownMenuItem
+                  onClick={() => onShare(resume)}
+                  className='gap-2'
+                >
+                  <Share2 className='h-4 w-4' /> Share Link
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
                 onClick={() => onToggleVisibility(resume)}
                 className='gap-2'
