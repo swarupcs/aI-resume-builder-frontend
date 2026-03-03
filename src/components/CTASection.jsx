@@ -4,35 +4,43 @@ import { Link } from 'react-router-dom';
 const CTASection = () => {
   return (
     <section className='relative py-24 sm:py-32 overflow-hidden'>
-      {/* Animated gradient background */}
-      <div className='absolute inset-0'>
-        <div className='absolute inset-0 bg-gradient-to-br from-primary/15 via-background to-purple-600/10' />
-        <div className='absolute inset-0 bg-mesh opacity-40' />
-        <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-glow' />
-      </div>
-
-      {/* Floating orbs */}
-      <div className='absolute top-10 left-20 w-48 h-48 rounded-full bg-primary/8 blur-3xl animate-float' />
-      <div className='absolute bottom-10 right-20 w-64 h-64 rounded-full bg-purple-600/6 blur-3xl animate-float-slow' />
+      {/* ✅ Consistent with rest of page — no competing bg */}
+      <div className='absolute inset-0 bg-mesh opacity-20' />
 
       <div className='container relative mx-auto px-4'>
         <div className='max-w-4xl mx-auto'>
-          {/* Card */}
+          {/* Card with subtle border glow instead of heavy bg */}
           <div
-            className='relative rounded-3xl border border-primary/20 overflow-hidden p-10 sm:p-16 text-center'
-            style={{ background: 'oklch(from var(--primary) l c h / 0.04)' }}
+            className='relative rounded-3xl overflow-hidden p-10 sm:p-16 text-center border border-border'
+            style={{
+              background: 'var(--card)',
+            }}
           >
-            {/* Gradient border */}
+            {/* Subtle top gradient accent line */}
             <div
-              className='absolute inset-0 rounded-3xl opacity-20'
+              className='absolute top-0 left-0 right-0 h-px'
               style={{
-                boxShadow: '0 0 0 1px oklch(from var(--primary) l c h / 0.4)',
+                background:
+                  'linear-gradient(90deg, transparent, var(--primary), oklch(0.65 0.28 305), transparent)',
               }}
             />
 
+            {/* Very subtle inner glow */}
+            <div
+              className='absolute inset-0 opacity-30'
+              style={{
+                background:
+                  'radial-gradient(ellipse at 50% 0%, oklch(from var(--primary) l c h / 0.12), transparent 60%)',
+              }}
+            />
+
+            {/* Floating orbs — subtle */}
+            <div className='absolute top-8 left-12 w-32 h-32 rounded-full bg-primary/5 blur-2xl animate-float pointer-events-none' />
+            <div className='absolute bottom-8 right-12 w-40 h-40 rounded-full bg-purple-600/5 blur-2xl animate-float-slow pointer-events-none' />
+
             {/* Grid pattern inside card */}
             <div
-              className='absolute inset-0 opacity-[0.03]'
+              className='absolute inset-0 opacity-[0.02]'
               style={{
                 backgroundImage:
                   'linear-gradient(var(--foreground) 1px, transparent 1px), linear-gradient(90deg, var(--foreground) 1px, transparent 1px)',
@@ -66,7 +74,7 @@ const CTASection = () => {
               </p>
 
               <div className='flex flex-col sm:flex-row items-center justify-center gap-4'>
-                <Link to='/signup'>
+                <Link to='/dashboard'>
                   <button
                     className='group relative flex items-center gap-3 px-8 py-4 rounded-xl font-display font-bold text-base text-white overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl'
                     style={{
@@ -75,7 +83,7 @@ const CTASection = () => {
                       boxShadow: '0 6px 32px oklch(0.72 0.22 280 / 0.45)',
                     }}
                   >
-                    <Sparkles className='h-5 w-5 transition-transform group-hover:rotate-12' />
+                    <Zap className='h-5 w-5 transition-transform group-hover:rotate-12' />
                     Create Your Resume Free
                     <ArrowRight className='h-5 w-5 transition-transform group-hover:translate-x-1' />
                     <div className='absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity' />
@@ -83,7 +91,7 @@ const CTASection = () => {
                 </Link>
 
                 <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                  <Zap className='h-4 w-4 text-primary' />
+                  <Sparkles className='h-4 w-4 text-primary' />
                   Ready in under 2 minutes
                 </div>
               </div>
