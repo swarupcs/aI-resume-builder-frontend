@@ -7,8 +7,9 @@ import { PersistGate } from 'redux-persist/integration/react';
 import store, { persistor } from './app/store.js';
 import { Loader2 } from 'lucide-react';
 import AppRoutes from './AppRoutes.jsx';
+import { ThemeProvider } from './context/ThemeContext.jsx';
 
-const queryClient = new QueryClient(); // ✅ outside component
+const queryClient = new QueryClient();
 
 function App() {
   return (
@@ -16,15 +17,32 @@ function App() {
       <PersistGate
         loading={
           <div className='min-h-screen bg-background flex items-center justify-center'>
-            <Loader2 className='h-8 w-8 animate-spin text-primary' />
+            <div className='relative'>
+              <div className='absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse' />
+              <Loader2 className='h-10 w-10 animate-spin text-primary relative z-10' />
+            </div>
           </div>
         }
         persistor={persistor}
       >
-        <QueryClientProvider client={queryClient}>
-          <AppRoutes />
-          <Toaster position='top-center' richColors />
-        </QueryClientProvider>
+        <ThemeProvider>
+          <QueryClientProvider client={queryClient}>
+            <AppRoutes />
+            <Toaster
+              position='top-center'
+              richColors
+              toastOptions={{
+                style: {
+                  fontFamily: 'var(--font-body)',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border)',
+                  // background: 'var(--card)',
+                  // color: 'var(--foreground)',
+                },
+              }}
+            />
+          </QueryClientProvider>
+        </ThemeProvider>
       </PersistGate>
     </Provider>
   );

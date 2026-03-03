@@ -29,7 +29,6 @@ import SkillsForm from '@/components/builder/SkillsForm';
 import ResumePreview from '@/components/builder/ResumePreview';
 import TemplateSelector from '@/components/builder/TemplateSelector';
 import ColorPicker from '@/components/builder/ColorPicker';
-import { Button } from '@/components/ui/button';
 import { useResumeById } from '@/hooks/resume/useResumeById';
 import { useUpdateResume } from '@/hooks/resume/useUpdateResume';
 import { useToggleResumeVisibility } from '@/hooks/resume/useToggleResumeVisibility';
@@ -60,23 +59,17 @@ const ResumeBuilder = () => {
   const { resumeId } = useParams();
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [removeBackground, setRemoveBackground] = useState(false);
-  // ─── Fetch ───────────────────────────────────────────────────────────────────────────
+
   const { data: fetchedResume, isLoading } = useResumeById(resumeId, {
     onError: (error) => toast.error(error.message || 'Failed to load resume'),
   });
 
-  // ─── Derive mapped resume data ──────────────────────────────────────────────────
-  // useMemo avoids the useEffect + setState anti-pattern. The mapped object is
-  // recomputed only when fetchedResume changes, with no extra render cycle.
   const serverResume = useMemo(() => {
     const resume = fetchedResume?.data?.resume;
     if (!resume) return null;
-
     return {
       _id: resume._id,
       title: resume.title ?? DEFAULT_RESUME.title,
-
-      // PersonalInfoForm: { full_name, email, phone, location, profession, linkedin, website, image }
       personal_info: {
         full_name: resume.personal_info?.full_name ?? '',
         email: resume.personal_info?.email ?? '',
@@ -87,11 +80,7 @@ const ResumeBuilder = () => {
         website: resume.personal_info?.website ?? '',
         image: resume.personal_info?.image ?? '',
       },
-
-      // ProfessionalSummaryForm: plain string
       professional_summary: resume.professional_summary ?? '',
-
-      // ExperienceForm: { company, position, start_date, end_date, description, is_current }
       experience: (resume.experience ?? []).map((exp) => ({
         company: exp.company ?? '',
         position: exp.position ?? '',
@@ -100,8 +89,6 @@ const ResumeBuilder = () => {
         description: exp.description ?? '',
         is_current: exp.is_current ?? false,
       })),
-
-      // EducationForm: { institution, degree, field, graduation_date, gpa }
       education: (resume.education ?? []).map((edu) => ({
         institution: edu.institution ?? '',
         degree: edu.degree ?? '',
@@ -109,35 +96,24 @@ const ResumeBuilder = () => {
         graduation_date: edu.graduation_date ?? '',
         gpa: edu.gpa ?? '',
       })),
-
-      // ProjectForm: { name, type, description }
       project: (resume.project ?? []).map((proj) => ({
         name: proj.name ?? '',
         type: proj.type ?? '',
         description: proj.description ?? '',
       })),
-
-      // SkillsForm: array of strings
       skills: (resume.skills ?? []).map((skill) => String(skill)),
-
       template: resume.template ?? DEFAULT_RESUME.template,
       accent_color: resume.accent_color ?? DEFAULT_RESUME.accent_color,
-
-      // Map isPublic (MongoDB) -> public (frontend state)
       public: resume.isPublic ?? DEFAULT_RESUME.public,
     };
   }, [fetchedResume]);
 
-  // Local overrides layer — user edits are tracked here on top of serverResume
   const [localOverrides, setLocalOverrides] = useState({});
-
-  // Merge: server data as base, local edits on top
   const resumeData = useMemo(
     () => ({ ...DEFAULT_RESUME, ...serverResume, ...localOverrides }),
     [serverResume, localOverrides],
   );
 
-  // Setter that components call — only stores the diff from server data
   const setResumeData = (updater) => {
     setLocalOverrides((prev) => {
       const current = { ...DEFAULT_RESUME, ...serverResume, ...prev };
@@ -146,15 +122,11 @@ const ResumeBuilder = () => {
     });
   };
 
-  // ─── Save ──────────────────────────────────────────────────────────────────
   const { mutate: updateResume, isPending: isSaving } =
     useUpdateResume(resumeId);
 
   const saveResume = () => {
     const hasNewImage = resumeData.personal_info?.image instanceof File;
-
-    // Strip the File object from JSON — it must go as a separate FormData field.
-    // If image is already a URL string, keep it so the backend doesn't clear it.
     const resumeDataToSend = {
       ...resumeData,
       personal_info: {
@@ -162,7 +134,6 @@ const ResumeBuilder = () => {
         ...(hasNewImage ? { image: undefined } : {}),
       },
     };
-
     updateResume(
       {
         resumeId,
@@ -172,7 +143,6 @@ const ResumeBuilder = () => {
       },
       {
         onSuccess: (data) => {
-          // Sync image back from server (now a CDN URL, not a File object)
           setResumeData((prev) => ({
             ...prev,
             personal_info: data.data.resume.personal_info ?? prev.personal_info,
@@ -183,7 +153,6 @@ const ResumeBuilder = () => {
     );
   };
 
-  // ─── Toggle visibility ─────────────────────────────────────────────────────
   const { mutate: toggleVisibility, isPending: isTogglingVisibility } =
     useToggleResumeVisibility();
 
@@ -198,26 +167,30 @@ const ResumeBuilder = () => {
     });
   };
 
-  // ─── Share ─────────────────────────────────────────────────────────────────
   const handleShare = () => {
     const resumeUrl = `${window.location.origin}/view/${resumeId}`;
-
-    if (navigator.share) {
+    if (navigator.share)
       navigator.share({ url: resumeUrl, title: resumeData.title });
-    } else {
+    else {
       navigator.clipboard.writeText(resumeUrl);
       toast.success('Link copied to clipboard!');
     }
   };
-
-  const downloadResume = () => window.print();
 
   const progressPercent = (activeSectionIndex / (sections.length - 1)) * 100;
 
   if (isLoading) {
     return (
       <div className='min-h-screen bg-background flex items-center justify-center'>
-        <Loader2 className='size-8 animate-spin text-muted-foreground' />
+        <div className='flex flex-col items-center gap-4'>
+          <div className='relative'>
+            <div className='absolute inset-0 rounded-full bg-primary/15 blur-xl animate-pulse scale-150' />
+            <Loader2 className='size-10 animate-spin text-primary relative z-10' />
+          </div>
+          <p className='text-sm text-muted-foreground animate-pulse font-medium'>
+            Loading resume...
+          </p>
+        </div>
       </div>
     );
   }
@@ -226,32 +199,37 @@ const ResumeBuilder = () => {
     <div className='min-h-screen bg-background'>
       <Navbar />
 
-      {/* Header */}
-      <div className='max-w-7xl mx-auto px-4 py-6 mt-16'>
+      {/* Back nav */}
+      <div className='max-w-7xl mx-auto px-4 py-5 mt-16'>
         <Link
           to='/dashboard'
-          className='inline-flex gap-2 items-center text-muted-foreground hover:text-foreground transition-colors'
+          className='inline-flex gap-2 items-center text-muted-foreground hover:text-foreground transition-colors text-sm font-medium group'
         >
-          <ArrowLeft className='size-4' /> Back to Dashboard
+          <ArrowLeft className='size-4 transition-transform group-hover:-translate-x-0.5' />
+          Back to Dashboard
         </Link>
       </div>
 
-      {/* Main Content */}
-      <div className='max-w-7xl mx-auto px-4 pb-8'>
-        <div className='grid lg:grid-cols-12 gap-8'>
-          {/* Left Panel - Form */}
-          <div className='relative lg:col-span-5'>
-            <div className='bg-card rounded-xl shadow-sm border border-border p-6 pt-4 relative overflow-hidden'>
-              {/* Progress Bar */}
-              <div className='absolute top-0 left-0 right-0 h-1 bg-muted'>
+      {/* Main grid */}
+      <div className='max-w-7xl mx-auto px-4 pb-10'>
+        <div className='grid lg:grid-cols-12 gap-6'>
+          {/* Left panel */}
+          <div className='lg:col-span-5'>
+            <div className='bg-card rounded-2xl border border-border shadow-sm overflow-hidden'>
+              {/* Progress bar */}
+              <div className='h-1 bg-muted'>
                 <div
-                  className='h-full bg-gradient-to-r from-green-500 to-green-600 transition-all duration-500'
-                  style={{ width: `${progressPercent}%` }}
+                  className='h-full transition-all duration-500 rounded-r-full'
+                  style={{
+                    width: `${progressPercent}%`,
+                    background:
+                      'linear-gradient(90deg, var(--primary), oklch(0.65 0.28 305))',
+                  }}
                 />
               </div>
 
-              {/* Section Navigation */}
-              <div className='flex justify-between items-center mb-6 border-b border-border pb-3 pt-2'>
+              {/* Toolbar */}
+              <div className='flex items-center justify-between px-5 py-3.5 border-b border-border bg-secondary/20'>
                 <div className='flex items-center gap-2'>
                   <TemplateSelector
                     selectedTemplate={resumeData.template}
@@ -270,60 +248,68 @@ const ResumeBuilder = () => {
                   />
                 </div>
 
-                <div className='flex items-center'>
+                <div className='flex items-center gap-1'>
                   {activeSectionIndex !== 0 && (
-                    <Button
-                      variant='ghost'
-                      size='sm'
+                    <button
                       onClick={() =>
-                        setActiveSectionIndex((prev) => Math.max(prev - 1, 0))
+                        setActiveSectionIndex((p) => Math.max(p - 1, 0))
                       }
-                      className='text-muted-foreground'
+                      className='flex items-center gap-1 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-all'
                     >
-                      <ChevronLeft className='size-4 mr-1' /> Previous
-                    </Button>
+                      <ChevronLeft className='size-3.5' /> Prev
+                    </button>
                   )}
-                  <Button
-                    variant='ghost'
-                    size='sm'
+                  <button
                     onClick={() =>
-                      setActiveSectionIndex((prev) =>
-                        Math.min(prev + 1, sections.length - 1),
+                      setActiveSectionIndex((p) =>
+                        Math.min(p + 1, sections.length - 1),
                       )
                     }
                     disabled={activeSectionIndex === sections.length - 1}
-                    className='text-muted-foreground'
+                    className='flex items-center gap-1 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-all disabled:opacity-30'
                   >
-                    Next <ChevronRight className='size-4 ml-1' />
-                  </Button>
+                    Next <ChevronRight className='size-3.5' />
+                  </button>
                 </div>
               </div>
 
-              {/* Section Indicators */}
-              <div className='flex justify-center gap-2 mb-6'>
+              {/* Section tabs */}
+              <div className='flex items-center gap-1.5 px-5 py-3 border-b border-border overflow-x-auto no-scrollbar'>
                 {sections.map((section, index) => {
                   const Icon = section.icon;
+                  const isActive = index === activeSectionIndex;
+                  const isDone = index < activeSectionIndex;
                   return (
                     <button
                       key={section.id}
                       onClick={() => setActiveSectionIndex(index)}
-                      className={`p-2 rounded-lg transition-colors ${
-                        index === activeSectionIndex
-                          ? 'bg-primary text-primary-foreground'
-                          : index < activeSectionIndex
-                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                            : 'bg-muted text-muted-foreground'
-                      }`}
                       title={section.name}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all duration-200 flex-shrink-0 ${
+                        isActive
+                          ? 'text-primary-foreground'
+                          : isDone
+                            ? 'bg-green-500/10 text-green-500 border border-green-500/20'
+                            : 'bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground'
+                      }`}
+                      style={
+                        isActive
+                          ? {
+                              background:
+                                'linear-gradient(135deg, var(--primary), oklch(0.65 0.28 305))',
+                              boxShadow: '0 2px 8px oklch(0.72 0.22 280 / 0.3)',
+                            }
+                          : {}
+                      }
                     >
-                      <Icon className='size-4' />
+                      <Icon className='size-3.5' />
+                      <span className='hidden sm:block'>{section.name}</span>
                     </button>
                   );
                 })}
               </div>
 
-              {/* Form Content */}
-              <div className='space-y-6 min-h-[400px]'>
+              {/* Form content */}
+              <div className='p-5 min-h-[420px]'>
                 {sections[activeSectionIndex].id === 'personal' && (
                   <PersonalInfoForm
                     data={resumeData.personal_info}
@@ -382,60 +368,64 @@ const ResumeBuilder = () => {
                 )}
               </div>
 
-              {/* Save Button */}
-              <Button
-                onClick={saveResume}
-                disabled={isSaving}
-                className='w-full mt-6 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
-              >
-                {isSaving ? (
-                  <Loader2 className='size-4 animate-spin mr-2' />
-                ) : (
-                  <Save className='size-4 mr-2' />
-                )}
-                {isSaving ? 'Saving...' : 'Save Changes'}
-              </Button>
+              {/* Save button */}
+              <div className='px-5 pb-5'>
+                <button
+                  onClick={saveResume}
+                  disabled={isSaving}
+                  className='w-full flex items-center justify-center gap-2 py-3 px-6 rounded-xl font-display font-semibold text-sm text-white transition-all duration-200 hover:scale-[1.01] disabled:opacity-60 disabled:scale-100'
+                  style={{
+                    background:
+                      'linear-gradient(135deg, oklch(0.55 0.22 165), oklch(0.50 0.20 185))',
+                    boxShadow: '0 4px 16px oklch(0.55 0.22 165 / 0.35)',
+                  }}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className='size-4 animate-spin' /> Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className='size-4' /> Save Changes
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Right Panel - Preview */}
+          {/* Right panel - Preview */}
           <div className='lg:col-span-7'>
-            {/* Action Buttons */}
+            {/* Action buttons */}
             <div className='flex items-center justify-end gap-2 mb-4'>
               {resumeData.public && (
-                <Button
-                  variant='outline'
-                  size='sm'
+                <button
                   onClick={handleShare}
-                  className='bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800'
+                  className='flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium bg-blue-500/10 text-blue-500 border border-blue-500/20 hover:bg-blue-500/15 transition-colors'
                 >
-                  <Share2 className='size-4 mr-2' /> Share
-                </Button>
+                  <Share2 className='size-3.5' /> Share
+                </button>
               )}
-              <Button
-                variant='outline'
-                size='sm'
+              <button
                 onClick={changeResumeVisibility}
                 disabled={isTogglingVisibility}
-                className='bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-100 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800'
+                className='flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15 transition-colors disabled:opacity-50'
               >
                 {isTogglingVisibility ? (
-                  <Loader2 className='size-4 mr-2 animate-spin' />
+                  <Loader2 className='size-3.5 animate-spin' />
                 ) : resumeData.public ? (
-                  <Eye className='size-4 mr-2' />
+                  <Eye className='size-3.5' />
                 ) : (
-                  <EyeOff className='size-4 mr-2' />
+                  <EyeOff className='size-3.5' />
                 )}
                 {resumeData.public ? 'Public' : 'Private'}
-              </Button>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={downloadResume}
-                className='bg-green-50 text-green-600 border-green-200 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800'
+              </button>
+              <button
+                onClick={() => window.print()}
+                className='flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium bg-green-500/10 text-green-500 border border-green-500/20 hover:bg-green-500/15 transition-colors'
               >
-                <Download className='size-4 mr-2' /> Download
-              </Button>
+                <Download className='size-3.5' /> Download PDF
+              </button>
             </div>
 
             <ResumePreview
