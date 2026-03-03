@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { logout, selectCurrentUser } from '@/features/authSlice.js';
-import { useTheme } from '@/context/ThemeContext.jsx';
+import { useTheme } from '@/hooks/useTheme.js';
 
 const Navbar = () => {
   const dispatch = useDispatch();
@@ -28,10 +28,6 @@ const Navbar = () => {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
-
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [location.pathname]);
 
   const handleLogout = () => {
     dispatch(logout());
