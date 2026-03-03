@@ -175,8 +175,8 @@ const ResumeBuilder = () => {
           // Sync image back from server (now a CDN URL, not a File object)
           setResumeData((prev) => ({
             ...prev,
-            personal_info: data.resume.personal_info ?? prev.personal_info,
-            public: data.resume.isPublic ?? prev.public,
+            personal_info: data.data.resume.personal_info ?? prev.personal_info,
+            public: data.data.resume.isPublic ?? prev.public,
           }));
         },
       },
